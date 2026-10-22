@@ -1,0 +1,25 @@
+# The image installs its own dependencies; a host's node_modules is the wrong platform's
+# binaries — sharp especially, since it ships native code.
+node_modules
+dist
+
+# Customer data never belongs in an image layer. The volume mounted at /data is where this
+# lives on the host, and the file is created there by the app on first boot.
+data
+*.db
+*.db-wal
+*.db-shm
+
+# Secrets. `.env.example` is the template that does get copied.
+.env
+.env.*
+!.env.example
+
+# Local-only directories and tooling.
+.git
+.gitignore
+.qoder
+.research
+vibe_images
+*.log
+.DS_Store

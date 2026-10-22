@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Enquiries &amp; bookings — Tandooriwala Bhadrak</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        padding: 1.5rem 1rem 4rem;
+        font: 15px/1.55 system-ui, 'Segoe UI', Roboto, sans-serif;
+        background: #f7efe0;
+        color: #1c1613;
+      }
+      main {
+        max-width: 60rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.35rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        margin: 0 0 0.25rem;
+      }
+      p.hint {
+        margin: 0 0 1.25rem;
+        color: #6f5b4d;
+        font-size: 0.9rem;
+      }
+      form.bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-bottom: 1.25rem;
+      }
+      input[type='password'] {
+        flex: 1 1 12rem;
+        min-height: 44px;
+        padding: 0.5rem 0.75rem;
+        border: 2px solid rgba(28, 22, 19, 0.2);
+        border-radius: 999px;
+        background: #fff;
+        font: inherit;
+      }
+      button {
+        min-height: 44px;
+        padding: 0.5rem 1.1rem;
+        border: 0;
+        border-radius: 999px;
+        background: #1c1613;
+        color: #f7efe0;
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+      }
+      button.mark {
+        background: #c1730f;
+        color: #1c1613;
+        padding: 0.35rem 0.85rem;
+        font-size: 0.85rem;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid #c2410c;
+        outline-offset: 2px;
+      }
+      #status {
+        margin: 0 0 1rem;
+        font-weight: 650;
+      }
+      #status[data-tone='error'] {
+        color: #93300a;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+      h2 {
+        font-size: 1.1rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        margin: 2.25rem 0 0.25rem;
+        padding-top: 1.25rem;
+        border-top: 2px solid rgba(28, 22, 19, 0.12);
+      }
+      .seats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin: 0.5rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .seats li {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.1rem 0.55rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: #efe3cd;
+      }
+      li {
+        background: #fff;
+        border: 1px solid rgba(28, 22, 19, 0.12);
+        border-left: 5px solid #e08a1e;
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+      }
+      li[data-status='handled'],
+      li[data-status='cancelled'] {
+        border-left-color: #2f6b45;
+        opacity: 0.72;
+      }
+      .head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 0.75rem;
+        align-items: baseline;
+      }
+      .head strong {
+        font-size: 1.05rem;
+      }
+      .head a {
+        color: #1c1613;
+      }
+      .tag {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        background: #efe3cd;
+      }
+      dl {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.2rem 1.25rem;
+        margin: 0.4rem 0 0;
+        font-size: 0.9rem;
+        color: #4a3a30;
+      }
+      dl div {
+        display: flex;
+        gap: 0.3rem;
+      }
+      dt {
+        font-weight: 700;
+      }
+      dd {
+        margin: 0;
+      }
+      .msg {
+        margin: 0.5rem 0 0.6rem;
+        white-space: pre-wrap;
+      }
+      .empty {
+        color: #6f5b4d;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Enquiries</h1>
+      <p class="hint">
+        Table requests and pre-orders from the site. Nothing here is emailed anywhere yet — this page
+        reads the restaurant's own database.
+      </p>
+
+      <form class="bar" id="login">
+        <label for="key" class="hint" style="flex-basis: 100%">Access key</label>
+        <input id="key" type="password" autocomplete="off" placeholder="TANDOORIWALA_ADMIN_KEY" />
+        <button type="submit">Load</button>
+      </form>
+
+      <p id="status" role="status"></p>
+
+      <h2>Bookings</h2>
+      <p class="hint">
+        Held chairs. Cancelling a booking releases its seats back to the chair map — a no-show left
+        active will keep those chairs out of the pool.
+      </p>
+      <ul id="bookingList"></ul>
+
+      <h2>Enquiries</h2>
+      <ul id="list"></ul>
+    </main>
+
+    <script>
+      const keyInput = document.getElementById('key')
+      const statusEl = document.getElementById('status')
+      const listEl = document.getElementById('list')
+      const bookingListEl = document.getElementById('bookingList')
+      let key = ''
+
+      function say(text, tone) {
+        statusEl.textContent = text
+        statusEl.dataset.tone = tone || 'ok'
+      }
+
+      /**
+       * Builds a node tree from plain strings only. User-submitted text never
+       * touches innerHTML, so a message containing markup stays inert text.
+       */
+      function el(tag, attrs, children) {
+        const node = document.createElement(tag)
+        for (const [name, value] of Object.entries(attrs || {})) {
+          if (name === 'text') node.textContent = value
+          else node.setAttribute(name, value)
+        }
+        for (const child of children || []) if (child) node.appendChild(child)
+        return node
+      }
+
+      function phoneLink(phone) {
+        return el('a', { href: 'tel:' + phone, text: phone })
+      }
+
+      function row(item) {
+        const details = []
+        if (item.visit_date) details.push(el('div', {}, [el('dt', { text: 'Date' }), el('dd', { text: item.visit_date })]))
+        if (item.visit_time) details.push(el('div', {}, [el('dt', { text: 'Time' }), el('dd', { text: item.visit_time })]))
+        if (item.party_size) details.push(el('div', {}, [el('dt', { text: 'Guests' }), el('dd', { text: String(item.party_size) })]))
+        details.push(el('div', {}, [el('dt', { text: 'Received' }), el('dd', { text: item.created_at.slice(0, 16).replace('T', ' ') })]))
+
+        const buttons = []
+        if (item.status === 'new') {
+          buttons.push(el('button', { type: 'button', class: 'mark', 'data-id': String(item.id), text: 'Mark handled' }))
+        }
+
+        return el(
+          'li',
+          { 'data-status': item.status },
+          [
+            el(
+              'div',
+              { class: 'head' },
+              [
+                el('strong', { text: item.name }),
+                phoneLink(item.phone),
+                el('span', { class: 'tag', text: item.kind }),
+                item.status === 'handled' ? el('span', { class: 'tag', text: 'handled' }) : null,
+              ],
+            ),
+            el('dl', {}, details),
+            item.message ? el('p', { class: 'msg', text: item.message }) : null,
+            buttons.length ? el('div', { class: 'acts' }, buttons) : null,
+          ],
+        )
+      }
+
+      function bookingRow(item) {
+        const details = [
+          el('div', {}, [el('dt', { text: 'When' }), el('dd', { text: item.booked_for + ' ' + item.slot })]),
+          el('div', {}, [el('dt', { text: 'Guests' }), el('dd', { text: String(item.party_size) })]),
+          el('div', {}, [el('dt', { text: 'Ref' }), el('dd', { text: item.ref })]),
+          el('div', {}, [el('dt', { text: 'Booked at' }), el('dd', { text: item.created_at.slice(0, 16).replace('T', ' ') })]),
+        ]
+
+        return el(
+          'li',
+          { 'data-status': item.status },
+          [
+            el(
+              'div',
+              { class: 'head' },
+              [
+                el('strong', { text: item.name }),
+                phoneLink(item.phone),
+                el('span', { class: 'tag', text: item.status === 'active' ? 'held' : 'cancelled' }),
+              ],
+            ),
+            item.chairs.length
+              ? el('ul', { class: 'seats' }, item.chairs.map((chair) => el('li', { text: chair })))
+              : null,
+            el('dl', {}, details),
+            item.note ? el('p', { class: 'msg', text: item.note }) : null,
+            item.status === 'active'
+              ? el(
+                  'div',
+                  { class: 'acts' },
+                  [el('button', { type: 'button', class: 'mark', 'data-action': 'cancel', 'data-id': String(item.id), text: 'Cancel and free seats' })],
+                )
+              : null,
+          ],
+        )
+      }
+
+      async function load() {
+        say('Loading…')
+        try {
+          const [enquiryRes, bookingRes] = await Promise.all([
+            fetch('/api/enquiries', { headers: { 'x-admin-key': key } }),
+            fetch('/api/bookings', { headers: { 'x-admin-key': key } }),
+          ])
+          if (!enquiryRes.ok || !bookingRes.ok) {
+            const denied = enquiryRes.status === 401 || bookingRes.status === 401
+            say(denied ? 'Wrong access key.' : 'Could not load (' + (enquiryRes.status || bookingRes.status) + ').', 'error')
+            return
+          }
+          const { enquiries } = await enquiryRes.json()
+          const { bookings } = await bookingRes.json()
+          listEl.replaceChildren(...enquiries.map(row))
+          bookingListEl.replaceChildren(...bookings.map(bookingRow))
+          const held = bookings.filter((item) => item.status === 'active').length
+          say(
+            held + ' booking' + (held === 1 ? '' : 's') + ' holding seats · ' + enquiries.length + ' recent enquiries.',
+            'ok',
+          )
+        } catch {
+          say('The API is not reachable. Start it with npm start.', 'error')
+        }
+      }
+
+      document.getElementById('login').addEventListener('submit', (event) => {
+        event.preventDefault()
+        key = keyInput.value.trim()
+        if (key) sessionStorage.setItem('tandooriwala.adminKey', key)
+        load()
+      })
+
+      async function act(endpoint, id, body, confirmText) {
+        if (confirmText && !window.confirm(confirmText)) return false
+        const res = await fetch(endpoint + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: { 'x-admin-key': key, 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) say('That change did not go through (' + res.status + ').', 'error')
+        return res.ok
+      }
+
+      document.addEventListener('click', async (event) => {
+        const button = event.target.closest('button[data-id]')
+        if (!button) return
+        const cancel = button.dataset.action === 'cancel'
+        button.disabled = true
+        try {
+          await act(
+            cancel ? '/api/bookings/' : '/api/enquiries/',
+            button.dataset.id,
+            { status: cancel ? 'cancelled' : 'handled' },
+            cancel ? 'Release these seats so other customers can take them?' : '',
+          )
+        } finally {
+          load()
+        }
+      })
+
+      const saved = sessionStorage.getItem('tandooriwala.adminKey')
+      if (saved) {
+        keyInput.value = saved
+        key = saved
+        load()
+      }
+    </script>
+  </body>
+</html>

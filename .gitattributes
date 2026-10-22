@@ -1,0 +1,15 @@
+# Line endings are stored as LF so the same checkout works on the Linux image the app is
+# deployed to, no matter which machine committed it.
+* text=auto eol=lf
+
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+*.md text eol=lf
+*.html text eol=lf
+*.css text eol=lf

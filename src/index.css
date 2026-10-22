@@ -1,0 +1,346 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------
+   Tandooriwala Bhadrak — design tokens
+   Palette: warm charcoal ink, cream paper, tandoor saffron + burnt orange.
+   Type: Archivo (oversized editorial display), Shrikhand (wordmark),
+   Inter (body), Caveat (handwritten margin notes).
+------------------------------------------------------------------- */
+@theme {
+  --color-ink: #1c1613;
+  --color-ink-800: #2a211c;
+  --color-ink-600: #4a3a30;
+  --color-ink-400: #6f5b4d;
+  --color-cream: #f7efe0;
+  --color-cream-200: #efe3cd;
+  --color-cream-400: #e2d2b6;
+  --color-saffron: #e08a1e;
+  --color-saffron-600: #c1730f;
+  --color-ember: #c2410c;
+  --color-ember-700: #93300a;
+  --color-spinach: #2f6b45;
+  --color-shell: #f7e4d3;
+
+  --font-display: 'Archivo', 'Arial Narrow', sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-wordmark: 'Shrikhand', 'Archivo', cursive;
+  --font-hand: 'Caveat', 'Comic Sans MS', cursive;
+
+  --breakpoint-xs: 26rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --page-pad: clamp(1.15rem, 5vw, 5.5rem);
+  }
+
+  * {
+    /* Safari iOS: let the layout breathe with dynamic viewport units */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+
+  /* Paper grain keeps the cream from reading as flat digital white */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.32;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-ember);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Ember on charcoal is only ~2.6:1, so dark surfaces get the saffron ring (6.7:1). */
+  .on-dark :focus-visible {
+    outline-color: var(--color-saffron);
+  }
+
+  ::selection {
+    background: var(--color-saffron);
+    color: var(--color-ink);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@utility pad-x {
+  padding-inline: var(--page-pad);
+}
+
+/* Layered z-index scale: content < nav < modal sheet */
+@utility z-content {
+  z-index: 10;
+}
+
+@utility z-nav {
+  z-index: 50;
+}
+
+@utility z-overlay {
+  z-index: 60;
+}
+
+/* Oversized uppercase display type — the site's signature */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 82%;
+  text-transform: uppercase;
+  letter-spacing: -0.035em;
+  line-height: 0.86;
+}
+
+@utility display-hero {
+  font-size: clamp(3.1rem, 15.5vw, 11.5rem);
+  font-weight: 900;
+  font-stretch: 75%;
+}
+
+@utility display-section {
+  font-size: clamp(2.4rem, 9.5vw, 7.5rem);
+  font-weight: 800;
+  font-stretch: 78%;
+}
+
+@utility display-mid {
+  font-size: clamp(1.9rem, 6vw, 4.25rem);
+  font-weight: 800;
+  font-stretch: 80%;
+}
+
+@utility wordmark {
+  font-family: var(--font-wordmark);
+  font-weight: 400;
+  /* Shrikhand has very tight side bearings, so the negative tracking used for the
+     Archivo display face made "Tandooriwala" collide at wordmark sizes. */
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+@utility hand {
+  font-family: var(--font-hand);
+}
+
+/* Playful tilted pill, borrowed in spirit from sticker-style nav buttons */
+@utility pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.7rem 1.35rem;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  transition:
+    transform 220ms var(--ease-out-soft),
+    background-color 220ms var(--ease-out-soft),
+    color 220ms var(--ease-out-soft),
+    box-shadow 220ms var(--ease-out-soft);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+@utility eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Scroll reveal: hidden only when JS confirms motion is allowed */
+@utility reveal-hidden {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+/* Chips are labels, not focusable, so the global :focus-visible ring never fires on
+   them. The ember outline has to be declared against the wrapped control instead. */
+@utility chip-focus {
+  &:focus-within {
+    outline: 3px solid var(--color-ember);
+    outline-offset: 2px;
+  }
+}
+
+.reveal-shown {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 480ms var(--ease-out-soft),
+    transform 480ms var(--ease-out-soft);
+}
+
+@keyframes marquee-track {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes ember-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(14px, -120px, 0) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.marquee-track {
+  animation: marquee-track var(--marquee-duration, 38s) linear infinite;
+  will-change: transform;
+}
+
+.marquee-host:hover .marquee-track,
+.marquee-host:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+/* The hero print is a still photograph with no frame: its edges are masked away
+   into the charcoal instead of being cut by a border. On a phone all four sides
+   feather; on a wide screen only the leading edge fades, so the copy keeps its
+   contrast and the picture bleeds off the right. */
+.hero-fade {
+  -webkit-mask-image: radial-gradient(72% 66% at 50% 48%, #000 52%, transparent 82%);
+  mask-image: radial-gradient(72% 66% at 50% 48%, #000 52%, transparent 82%);
+}
+
+@media (width >= 64rem) {
+  .hero-fade {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.45) 22%, #000 52%),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, #000 26%, #000 74%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.45) 22%, #000 52%),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, #000 26%, #000 74%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+}
+
+/* Forced-colours mode drops masking, which would leave a hard-edged block of
+   photo where the copy is meant to sit. */
+@media (forced-colors: active) {
+  .hero-fade {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
+
+/* "SMOKE." and "SPICE." sit back into the charcoal at half strength. Kept as an
+   unlayered rule so it wins over .reveal-shown's opacity:1 on the wrapper. */
+.hero-faint {
+  opacity: 0.52;
+}
+
+/* Only the tail of "SLOW FIRE." dissolves — the part that overlaps the print.
+   The gradient is clipped to the glyphs, so the trailing period fades hardest. */
+.hero-dissolve {
+  background-image: linear-gradient(
+    62deg,
+    var(--color-saffron) 0%,
+    rgba(224, 138, 30, 0.9) 38%,
+    rgba(224, 138, 30, 0.6) 74%,
+    rgba(224, 138, 30, 0.34) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Forced-colours mode drops background painting, which would leave the clipped
+   glyphs invisible. */
+@media (forced-colors: active) {
+  .hero-dissolve {
+    background-image: none;
+    color: CanvasText;
+  }
+}
+
+.ember {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle, var(--color-saffron) 0%, transparent 70%);
+  animation: ember-drift var(--ember-duration, 7s) linear infinite;
+  animation-delay: var(--ember-delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .marquee-track {
+    animation: none;
+    transform: none;
+  }
+
+  .ember {
+    display: none;
+  }
+
+  .reveal-hidden {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,0 +1,54 @@
+# render.yaml — the alternative to fly.toml, for anyone who would rather click than install a
+# CLI. Push this repository to GitHub, then "New+ > Blueprint" in the Render dashboard: it
+# reads this file and builds the service, the disk and the environment for you.
+#
+# Render terminates TLS for you and gives the service an HTTPS `.onrender.com` address to
+# start with, which is enough to make the site reachable from another country. Two things here
+# are not optional: the paid instance type — Render only attaches persistent disks to paid
+# services, and a free service would lose every booking and photo on restart — and the Node
+# version, because `node:sqlite` needs 22.13 or newer.
+
+services:
+  - type: web
+    name: tandooriwala-bhadrak
+    runtime: node
+    plan: starter
+    # Closest Render region to Odisha; a customer in the United States still gets the same
+    # page, it is only the hand-shake that travels further.
+    region: singapore
+    rootDir: .
+    buildCommand: npm ci && npm run build
+    startCommand: node --disable-warning=ExperimentalWarning server/index.js
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+
+    disk:
+      name: tandooriwala-data
+      mountPath: /var/data
+      sizeGB: 1
+
+    envVars:
+      # `node:sqlite` needs 22.13 or newer, and `engines` alone leaves the exact build to the
+      # platform. Pin it so a redeploy cannot land on an older minor.
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      # Set to the domain Render gives the service once it is up (or to your own after the
+      # custom-domain step below). No trailing slash, never localhost.
+      - key: TRUSTED_ORIGIN
+        sync: false
+      # Render has already terminated TLS by the time the request reaches Node, so one hop.
+      - key: TRUST_PROXY_HOPS
+        value: 1
+      - key: DATA_FILE
+        value: /var/data/enquiries.db
+      - key: UPLOAD_DIR
+        value: /var/data/uploads/avatars
+      - key: RESTAURANT_TIMEZONE
+        value: Asia/Kolkata
+      - key: TANDOORIWALA_ADMIN_KEY
+        generateValue: true
+      # Only for a separate static frontend; leave unset for this single-service layout.
+      - key: ALLOWED_ORIGINS
+        sync: false

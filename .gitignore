@@ -1,0 +1,44 @@
+# --- dependencies and build output ---
+node_modules
+dist
+.vite
+*.tsbuildinfo
+
+# --- local and OS clutter ---
+*.local
+.DS_Store
+Thumbs.db
+.qoder
+logs
+*.log
+npm-debug.log*
+
+# --- research scratch and unoptimised image masters ---
+.research
+vibe_images
+
+# --- the enquiry and booking store: live customer data, never publishable ---
+data
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+
+# Profile photos. `UPLOAD_DIR` is expected to stay under `data/`, where the line above
+# already covers it; this repeats the default so a folder moved by hand still stays out.
+data/uploads/
+
+# --- secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub

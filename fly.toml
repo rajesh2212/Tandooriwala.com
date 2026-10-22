@@ -1,0 +1,70 @@
+# fly.toml — the deployment this repo is set up for.
+#
+# Three commands publish it, all of them yours to run (see DEPLOYING.md):
+#
+#   fly launch --no-create                       # this file already exists, so just create the app
+#   fly volumes create tandooriwala_data --size 1 --region bom1
+#   fly secrets create --from-env-file .env      # or set each one by name
+#   fly deploy
+#
+# Why Fly.io: it gives a real Docker container, a persistent volume for the SQLite file and
+# the photos, automatic HTTPS with a certificate that renews itself, and a Mumbai region
+# (`bom1`) for the customers in Odisha — while the link preview a friend in another country
+# opens is served from the edge, not from your laptop.
+
+app = "tandooriwala-bhadrak"
+primary_region = "bom1"
+kill_signal = "SIGINT"
+kill_timeout = "20s"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  # Fly injects its own PORT (8080), which the container reads; TRUSTED_ORIGIN and the admin
+  # key come from `fly secrets`, not from here.
+  DATA_FILE = "/data/enquiries.db"
+  UPLOAD_DIR = "/data/uploads/avatars"
+  TRUST_PROXY_HOPS = "1"
+  RESTAURANT_TIMEZONE = "Asia/Kolkata"
+  RESTAURANT_UTC_OFFSET = "+05:30"
+
+[mounts]
+  source = "tandooriwala_data"
+  destination = "/data"
+
+[[services]]
+  protocol = "tcp"
+  processes = ["app"]
+  # Fly's own proxy terminates TLS and forwards X-Forwarded-Proto, which is what turns the
+  # session cookie's Secure flag on.
+  internal_port = 8080
+
+  [services.concurrency]
+    hard_limit = 64
+    soft_limit = 48
+
+  [[services.ports]]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "get"
+    path = "/api/health"
+    protocol = "https"
+    # 503 from /api/health means the process is up but cannot open its store.
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
