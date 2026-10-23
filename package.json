@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "setup": "node scripts/setup.mjs",
     "start": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env server/index.js",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

@@ -9,6 +9,236 @@ bookings on a chair map, customer accounts with a profile photo, and ticket hist
 downloads as a PDF. Everything that writes goes through the Node backend and SQLite —
 there are no mocked success states.
 
+## Process for Installation in Your Local Computer
+
+Written for someone who got this project from the repository page as **Code → Download ZIP** and has
+never opened a terminal. Every command here was run and checked, on Windows 11 with Node v22.14.0,
+npm 10.9.2 and Vite 7.3.7; the `npm …` lines are byte-for-byte identical on macOS and Linux.
+Nothing in this section is production-only unless it says so — publishing the site publicly is
+[`DEPLOYING.md`](DEPLOYING.md), and no step below needs an account on any external service.
+
+### 1. Unzip it, and put the folder somewhere short
+
+The ZIP contains one folder (named after the repository). Extract it — right-click → **Extract All**
+on Windows, double-click on macOS, `unzip Tandooriwala.com-main.zip` on Linux — and move the result
+somewhere with a short path:
+
+```
+C:\dev\tandooriwala          (Windows)
+~/dev/tandooriwala           (macOS, Linux)
+```
+
+You should now see `package.json`, `index.html`, `src/`, `server/`, `scripts/`, `.env.example` inside
+it. If you are still looking at a folder called `Tandooriwala.com-main` *inside* another folder of the
+same name, that inner one is the project. A very deep path on Windows can make step 4 fail with
+`ENAMETOOLONG` — that is why "somewhere short" matters more than "somewhere tidy".
+
+### 2. What has to be installed first
+
+| Need | Version | Why |
+| --- | --- | --- |
+| **Node.js** | **22.13 or newer** (24 recommended) | The backend stores bookings with `node:sqlite`, which is built into Node from 22.13. There is no database server to install. |
+| **npm** | ships with Node | Installs the dependencies and runs the scripts. |
+| Git | not required | You downloaded a ZIP, so you do not need it. |
+| Docker | not required | Optional, see the last item in this section. |
+
+Install Node from [nodejs.org](https://nodejs.org/) (the LTS button) and check what you actually got:
+
+```bash
+node -v     # v22.13.0 or higher — this is the one that bites
+npm -v      # any recent number; 10.x or 11.x both work
+```
+
+An old Node left over from another project is the single most common reason this site will not start.
+`npm run setup` (step 5) checks it for you and says so in plain words.
+
+### 3. Open a terminal inside the project folder
+
+- **Windows**: open the folder in File Explorer, click into the address bar, type `cmd` and press
+  Enter. Or use *Git Bash* / *PowerShell* — both work; the commands below are the same in all three.
+- **macOS**: Terminal app → `cd` and a space, drag the folder onto the window, press Enter.
+- **Linux**: your file manager's *Open Terminal Here*, or `cd ~/dev/tandooriwala`.
+
+Confirm the terminal is in the right place before going on — `package.json` must be listed:
+
+```bash
+dir          # Windows cmd
+ls -a        # PowerShell, macOS, Linux
+```
+
+### 4. Install the dependencies
+
+```bash
+npm install
+```
+
+Use plain `npm install`, **not** `sudo npm install` — `sudo` on macOS/Linux writes root-owned files
+that the next run cannot replace. This reads [`package-lock.json`](package-lock.json), so everyone gets
+exactly the versions this site was built and tested with: React 19, Vite 7, Tailwind 4, Express 5,
+`sharp` (profile-photo resizing) and `jspdf` (the ticket). It creates a `node_modules/` folder and
+prints no error when it succeeds; a couple of `deprecated` warnings are normal. `npm ci` also works and
+is stricter — it wipes `node_modules/` first, which is what you want if the folder is half-installed
+or you are re-testing a clean download.
+
+If it fails on `sharp`, keep reading step 10 — the site still runs; only photo uploads are affected.
+
+### 5. Configuration: one command, or one copied file
+
+**Locally you need almost nothing.** Every value has a working default, and no third-party account,
+API key, map token, payment gateway or SMTP server is involved anywhere in this project. There is
+exactly one value worth creating on a laptop — the key that opens the owner's inbox at `/admin`:
+
+```bash
+npm run setup
+```
+
+That checks your Node version and writes a `.env` for you containing a freshly generated
+`TANDOORIWALA_ADMIN_KEY` and nothing that would break a local run. Re-running it never overwrites an
+existing `.env`. The file is gitignored, so it cannot be committed by accident, and it holds only a
+local-only secret — no real credential belongs in this project at all.
+
+Prefer to do it by hand, or want the full variable list? Copy the template instead:
+
+```bash
+copy .env.example .env       (Windows cmd)
+cp .env.example .env         (PowerShell: Copy-Item .env.example .env — macOS, Linux)
+```
+
+⚠️ If you copy the template, **delete or comment out `NODE_ENV=production` and `TRUSTED_ORIGIN`** for
+local work. `.env.example` is written as a production template, and the server deliberately refuses to
+start in production mode with an `.example` origin — that guard exists so nobody publishes a site whose
+links, cookies and CORS still point at localhost. [`DEPLOYING.md`](DEPLOYING.md) §3 is where those two
+lines belong. `npm run setup` sidesteps the whole problem by only writing the one line you need.
+
+### 6. Database, migrations and photo storage — all automatic
+
+There is nothing to create, no `mysql` to log into, no seed script to forget, and no ORM to configure:
+
+- The SQLite file path defaults to `data/enquiries.db`; [`server/db.js`](server/db.js) makes the folder
+  and the file on first boot.
+- [`server/migrate.js`](server/migrate.js) applies the four ordered steps (`0001_enquiries`,
+  `0002_bookings`, `0003_accounts`, `0004_booking_owner`) the moment the server starts, records them in
+  `schema_migrations`, and is idempotent — so restarting never double-applies anything.
+- Profile photos go to `data/uploads/avatars/`. That folder is never served as a directory; the only way
+  in is `GET /api/profile/photo`, which checks the session and the owner.
+- Bookable seatings and the floor plan are *setup values* the restaurant edits in
+  [`server/config.js`](server/config.js) — see "Edit these first" below. They are not stored in the
+  database, so there is nothing to seed.
+
+So "set up the database" here means: **start the server once.** To begin from an empty inbox and an
+empty booking diary, stop the server and delete the `data/` folder; it is rebuilt on the next boot.
+`data/` is gitignored because it holds real customers' phone numbers.
+
+### 7. Start it — pick one of these two
+
+**A. The one-terminal version (simplest).** Build the front end once, then run the server that serves
+both the site and the API on a single port:
+
+```bash
+npm run build      # tsc --noEmit && vite build  -> dist/
+npm start          # http://localhost:8787
+```
+
+`npm run build` typechecks first, so a broken page is reported there instead of at runtime.
+
+**B. The development version (hot reload), which needs two terminals.** This is what you want if you
+are editing code; keep both running:
+
+```bash
+# terminal 1 — the API
+npm start
+
+# terminal 2 — the site, which proxies /api to http://localhost:8787
+npm run dev        # http://localhost:5173
+```
+
+`npm start` with no `dist/` is not a failure — it prints `dist/ not built — API only (run npm run dev
+for the site)` and serves `/api` alone, which is exactly what terminal 2's proxy needs. Terminal 1 can
+stay silent; it is doing work. If you use VS Code: *Terminal → New Terminal* twice, or the split `+`.
+
+### 8. Open it and confirm it is really working
+
+Route A → <http://localhost:8787>. Route B → <http://localhost:5173>. Both serve the same site; the
+difference is only whether editing source reloads the page.
+
+Check, in this order:
+
+1. The home page paints with the wordmark and the food photography.
+2. **The API is reachable** — <http://localhost:8787/api/health> (or `/api/health` on 5173) answers:
+   ```json
+   {"ok":true,"uptime":2033,"signed_in":false,"store":"ok","restaurant_day":"2026-10-23","timezone":"Asia/Kolkata"}
+   ```
+   `"store":"ok"` is the useful part: it means SQLite opened and the migrations applied.
+3. **The booking map has real data** — <http://localhost:8787/api/tables?date=2026-10-25> returns
+   `"slots":["12:30","13:30","20:00","21:00"]` plus the floor plan. Ask for a past date and it answers
+   `{"error":"invalid","fields":{"date":"Pick a date from today onward."}}` — that is the validation
+   working, not a bug.
+4. **Book a table end to end**: `/book` → pick a day and seating → click chairs → details → confirm.
+   You get a booking reference; the same chair on the same day and seating is now greyed out for everyone,
+   including in a second browser. Repeat a booking that you already took and the server answers `409`.
+5. **Sign up, upload a photo, download the ticket**: `/account` → create an account → `/profile` →
+   upload a JPG/PNG (it is resized to 512px and stored under `data/uploads/avatars/`) → *My Bookings* →
+   **Download booking ticket**. The PDF is drawn in your browser by `jspdf` from the row the server gave
+   that account, so it needs no service, key, or print dialog on the server.
+6. **The owner inbox**: <http://localhost:8787/admin> — paste the `TANDOORIWALA_ADMIN_KEY` value from
+   `.env` into the key field. Without that key the endpoints answer 503 on purpose: the inbox keeps
+   accepting messages but nobody can read them.
+
+To see it on a phone on the same Wi-Fi, open the `Network:` URL `npm run dev` prints (for example
+`http://192.168.1.12:5173/`). The proxy runs inside Vite, so `/api` works from the phone too. Windows
+asks whether to allow Node on the network — say yes to *Private* networks. That is local reach only:
+a customer outside your network still needs a real deployment.
+
+### 9. Stop it
+
+`Ctrl+C` in each terminal. The server prints nothing dramatic; the port simply stops answering.
+
+The verification suites can run while the site is up, because they never touch your real data:
+`npm run check` (36 assertions across double bookings, accounts, tickets, uploads and the private-room
+limit) opens its own throwaway databases — `data/.double-booking-check.db` and `data/.accounts-check.db` —
+and `check-accounts` binds its own port (`8901 + pid % 40`) instead of 8787. `node scripts/contrast-audit.mjs`
+reads no server at all. All three are safe to run any time.
+
+### 10. When it does not work, by operating system
+
+| What you see | What it means and what to do |
+| --- | --- |
+| `node: bad option --env-file-if-exists` at `npm start` | Your Node is older than 22.9. Install Node 24 and re-run `npm install`. This is step 2 biting, and it is Windows-macs-Linux equal. |
+| `Cannot find package 'node:sqlite'` / `ERR_UNKNOWN_BUILTIN_MODULE` | Node between 22.5 and 22.12, where `node:sqlite` needs a flag this app does not pass. Same fix: Node 22.13+ or 24. |
+| `npm install` dies on `sharp`, `ECONNRESET` or a post-install script | `sharp` is a prebuilt binary download. Re-run `npm install` with a working network; if it stays broken, the site and bookings still run — only profile-photo uploads report a failure, because `sharp` is imported lazily in [`server/uploads.js`](server/uploads.js). |
+| `EADDRINUSE :::8787` | Something already owns the port — usually a previous `npm start` that did not exit. Change ports instead of hunting it: set `PORT=8788` in `.env`, or find it: `netstat -ano \| findstr :8787` then `taskkill /PID <pid> /F` (Windows), `lsof -i :8787` then `kill <pid>` (macOS, Linux). Never kill a process you cannot name. |
+| The site loads but every write says it cannot reach the server, and `/book` shows an offline banner | Route B only: terminal 1 (`npm start`) is not running, so Vite's proxy has nothing to talk to. `API_URL` in `.env` overrides where it proxies. |
+| `dist/index.html is missing — run npm run build` at `npm start` | You used Route A without building, or deleted `dist/`. `npm run build`. |
+| The server refuses to boot and lists production problems, mentioning `TRUSTED_ORIGIN` | You have `NODE_ENV=production` in `.env` (step 5's warning). Remove it, or set a real HTTPS origin when you deploy. |
+| `/admin` says the inbox is closed, or `GET /api/enquiries` returns 503 | No `TANDOORIWALA_ADMIN_KEY` in `.env`, or the wrong one typed. It is a case-sensitive copy-paste from `.env`. |
+| `Picking a date from today onward` when you try to book today's dinner | The clock is `Asia/Kolkata` by design ([`server/clock.js`](server/clock.js)), so a slot that has already passed in Bhadrak is not bookable from another country. Not a bug; `RESTAURANT_TIMEZONE` is the knob. |
+| A booking you can see but not download as PDF | Only *confirmed* bookings produce a ticket, and only for the account that made them. That is the privacy rule working. |
+| Windows: "Windows protected your PC" on `node.exe`, or `npm` is not recognised in PowerShell after installing Node | Node's installer did not add itself to `PATH` — re-run it and choose *Add to PATH*, then open a **new** terminal. SmartScreen: *More info → Run anyway* is safe when you installed Node from nodejs.org yourself. |
+| macOS: `command not found: node` in a fresh Terminal window | Your PATH does not yet have the version manager's shim. Open a new window; with `nvm`, `nvm use --lts`. Do not install with `sudo`. |
+| Linux: `EACCES` on `npm install`, or permission denied on `data/` | Do not use `sudo`. Install Node through `nvm` (or your distro's Node 22+ package) so the project folder is owned by you: `chown -R "$USER" <folder>`. On a read-only mount (a USB stick, a Downloads folder on some distros) move the project to your home directory first. |
+| Pages look unstyled | Tailwind v4 is compiled by the Vite plugin — you ran `npm run dev`/`npm run build` from the project root, and [`src/index.css`](src/index.css) was imported. Opening `index.html` by double-clicking never works; it is a build tool, not a static file. |
+
+### Optional: Docker instead of the steps above
+
+The repo has a [`Dockerfile`](Dockerfile) that builds the site and runs the API in one image. It needs
+Docker Desktop (Windows/macOS) or Docker Engine (Linux), neither of which this project can install for
+you — and note that the commands below follow the committed Dockerfile but were not executed in this
+environment, so treat them as a starting point rather than as verified as step 7 was.
+
+```bash
+docker build -t tandooriwala .
+docker run --rm -p 8787:8787 \
+  -e TANDOORIWALA_ADMIN_KEY=<a-long-random-string> \
+  -v tandooriwala-data:/data \
+  tandooriwala
+```
+
+Then open <http://localhost:8787>. Two details matter: **do not** pass `--env-file=.env`, because the
+image already points `DATA_FILE` and `UPLOAD_DIR` at the `/data` volume and your local `.env` would
+override them back to relative paths — the bookings would land outside the volume and vanish on restart.
+The `-v` is what makes data survive. For a public deployment you additionally need `NODE_ENV=production`
+and a real `TRUSTED_ORIGIN`; see [`Dockerfile`](Dockerfile) and [`DEPLOYING.md`](DEPLOYING.md) §7C.
+
 ## Stack
 
 - Vite 7 + React 19 + TypeScript 5.9 (strict) + react-router-dom 7
@@ -25,6 +255,7 @@ there are no mocked success states.
 ## Commands
 
 ```bash
+npm run setup       # check Node, create a local .env with its own admin key — see the install guide
 npm run dev         # http://localhost:5173 (proxies /api to http://localhost:8787)
 npm run build       # tsc --noEmit && vite build -> dist/
 npm run preview     # serve dist/ on http://localhost:4173
