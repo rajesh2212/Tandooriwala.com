@@ -646,3 +646,38 @@ chairs and couples in the restaurant's own database and nothing else — the suc
 says plainly that the floor still phones to confirm, and the enquiry form only parks a
 request in the owner's list.
 
+## Buy Me a Coffee
+
+<img src="docs/coffee-cup.svg" width="30" height="30" alt="" role="presentation">
+
+If this project saved you a few evenings, you can buy me a coffee. It is a plain **UPI**
+tip — no order, no subscription, nothing to download.
+
+**UPI ID: `rb492713@ybl`** — pay it from any UPI app, or scan the code below.
+
+<p>
+  <img src="docs/upi-qr.png" width="240" height="240"
+       alt="A square UPI payment QR code: black modules on a white field, three finder squares in the corners, and a white rupee sign inside a black circle at the centre. Scanning it opens a payment request to this project's UPI ID in any UPI app." />
+</p>
+
+A few honest notes about it:
+
+- **Different UPI apps handle these links differently.** GPay, PhonePe, Paytm, BHIM and
+  your bank's app each open the code in their own screen, and some ask you to confirm the
+  payee name before they let in an amount. If one app refuses the link, another will
+  usually take the same ID typed in by hand. A QR is a convenience, not a guarantee.
+- The name shown by your app before you pay is the account holder's own UPI display name,
+  set at the bank — it is not stored anywhere in this repository.
+- The cup above is a plain icon drawn for this README. It is **not** the Buy Me a Coffee
+  logo and this is not a buymeacoffee.com page, an affiliation or a sponsorship; the
+  heading just says what it is for.
+- Nothing else about the restaurant is involved: no money touches Tandooriwala Bhadrak,
+  the booking database, or any customer, and this section exists only in the repository's
+  README. The public site deliberately still has no payment path of any kind.
+
+**To update it**, there are exactly two places: the UPI ID line above, and
+[`docs/upi-qr.png`](docs/upi-qr.png) — replace the file with the same name and the README
+picks it up with no other edit. Keep the `alt` text accurate if the new code looks
+different.
+
+
