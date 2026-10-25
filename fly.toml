@@ -1,19 +1,22 @@
 # fly.toml — the deployment this repo is set up for.
 #
-# Three commands publish it, all of them yours to run (see DEPLOYING.md):
+# Four commands publish it, all of them yours to run (see DEPLOYING.md):
 #
-#   fly launch --no-create                       # this file already exists, so just create the app
-#   fly volumes create tandooriwala_data --size 1 --region bom1
-#   fly secrets create --from-env-file .env      # or set each one by name
+#   fly launch --region sin --copy-config --no-deploy --ha=false   # --copy-config keeps this file
+#   fly volumes create tandooriwala_data --size 1 --region sin -y
+#   fly secrets set NODE_ENV=production TRUSTED_ORIGIN=... TANDOORIWALA_ADMIN_KEY=... --stage
 #   fly deploy
 #
+# The exact flag-by-flag walkthrough, and the two things that will bite, are in DEPLOYING.md §7A.
+#
 # Why Fly.io: it gives a real Docker container, a persistent volume for the SQLite file and
-# the photos, automatic HTTPS with a certificate that renews itself, and a Mumbai region
-# (`bom1`) for the customers in Odisha — while the link preview a friend in another country
-# opens is served from the edge, not from your laptop.
+# the photos, automatic HTTPS with a certificate that renews itself, and a region with capacity
+# near India — Singapore (`sin`) is the closest Fly still sells, since Mumbai (`bom1`) was closed
+# to new deployments. Customers in Odisha still reach it in tens of milliseconds, and the link
+# preview a friend in another country opens is served from the edge, not from your laptop.
 
 app = "tandooriwala-bhadrak"
-primary_region = "bom1"
+primary_region = "sin"
 kill_signal = "SIGINT"
 kill_timeout = "20s"
 
@@ -21,8 +24,11 @@ kill_timeout = "20s"
   dockerfile = "Dockerfile"
 
 [env]
-  # Fly injects its own PORT (8080), which the container reads; TRUSTED_ORIGIN and the admin
-  # key come from `fly secrets`, not from here.
+  # Fly does NOT inject PORT — verified on a live machine, where it came back unset and the app
+  # sat on its own 8787 while the proxy health-checked 8080. So the port is stated here, and it
+  # must match `internal_port` below. TRUSTED_ORIGIN and the admin key come from `fly secrets`,
+  # not from here.
+  PORT = "8080"
   DATA_FILE = "/data/enquiries.db"
   UPLOAD_DIR = "/data/uploads/avatars"
   TRUST_PROXY_HOPS = "1"
@@ -62,7 +68,11 @@ kill_timeout = "20s"
     grace_period = "15s"
     method = "get"
     path = "/api/health"
-    protocol = "https"
+    # Plain http on purpose: Fly's proxy terminates TLS at the edge, so inside the machine this port
+    # only ever speaks HTTP. Asking for https here makes the probe do a TLS handshake against a
+    # non-TLS listener — the tcp check passes, the app is fine, but the deployment never goes
+    # healthy. Found on the first real deploy.
+    protocol = "http"
     # 503 from /api/health means the process is up but cannot open its store.
 
 [[vm]]

@@ -34,8 +34,8 @@ RUN npm run build
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
 
-# No PORT here on purpose: the app already defaults to 8787 for a plain `docker run`, and a
-# baked-in ENV would fight the port a platform injects (Fly uses 8080).
+# No PORT here on purpose: the app already defaults to 8787 for a plain `docker run`. Fly gets its
+# 8080 from the [env] block in fly.toml, because Fly does NOT inject PORT — measured, not assumed.
 ENV NODE_ENV=production \
     DATA_FILE=/data/enquiries.db \
     UPLOAD_DIR=/data/uploads/avatars

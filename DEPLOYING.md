@@ -196,37 +196,69 @@ Pick **one** of these. A and B are the two that need the least thinking; C is fo
 ### A. Fly.io — recommended
 
 `fly.toml` and `Dockerfile` are committed and already agree: build from the Dockerfile, mount a
-volume at `/data`, let the platform set `PORT`, health-check `/api/health`.
+volume at `/data`, health-check `/api/health`. The commands below are the ones actually run against a
+live account, flags included.
 
 ```bash
 # 1. Install flyctl for your OS (Homebrew `brew install flyctl` on macOS; Windows has a winget
 #    package and its own installer), then sign in:
 fly auth login
+fly auth whoami                      # prints the signed-in address, and confirms the token works
 
-# 2. Create the app. `fly launch` reads the committed fly.toml rather than inventing a new one,
-#    and offers a Postgres and a Redis this app does not want — decline both. It will also try to
-#    deploy, which fails until the secrets and the volume exist. That is harmless.
-fly launch --region bom1            # bom1 = Mumbai: the closest region to Odisha
+# 2. Check the region before you commit to one — Fly has closed several to new deployments, and
+#    Mumbai (`bom1`) is one of them. Pick the nearest row with a ✓ in the last column:
+fly platform regions
+fly launch --name tandooriwala-bhadrak --region sin --ha=false \
+  --no-deploy --no-db --no-redis --no-object-storage --no-github-workflow --copy-config -y
+#    --copy-config  use the committed fly.toml instead of refusing to start (without it: "an
+#                   existing fly.toml was found")
+#    --ha=false     one machine, not two. A volume lives in one region on one host, so a second
+#                   machine would have no /data to mount.
+#    --no-deploy    the volume and the secrets have to exist first
+#    It rewrites fly.toml in its own formatting and drops the comments; `git diff fly.toml`
+#    afterwards and put the file back if you want them (`git show HEAD:fly.toml > fly.toml`).
 
 # 3. The volume the database and the profile photos live on. 1 GB is plenty for one restaurant.
-fly volumes create tandooriwala_data --region bom1 --size 1
+#    Same region as the app, or the machine cannot mount it. `-y` is required when not interactive.
+fly volumes create tandooriwala_data --region sin --size 1 -y
 
-# 4. Secrets, from the .env you filled in (§3). Never put them in fly.toml — that file is
-#    committed, and its [env] block is only for the non-secret defaults.
-fly secrets create --from-env-file .env
+# 4. Secrets. Never put them in fly.toml — that file is committed, and its [env] block is only for
+#    the non-secret defaults. `--stage` holds them until the first deploy instead of restarting an
+#    app that does not exist yet.
+fly secrets set NODE_ENV=production \
+  TRUSTED_ORIGIN=https://tandooriwala-bhadrak.fly.dev \
+  TANDOORIWALA_ADMIN_KEY="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("base64url"))')" \
+  --stage
+fly secrets list                     # names and digests only; the values are never shown again
 
 # 5. Build, ship, and ask what it thinks.
 fly deploy
-fly check health
+fly status                           # CHECKS should read "2 total", not "2 critical"
+fly logs -n                          # -n stops after the current lines; without it, it streams
 ```
 
-`bom1` keeps the round trip short for customers in Bhadrak while still serving a friend in another
-country from an edge rather than from your laptop. The committed `fly.toml` mounts the volume at
-`/data`, which is exactly where its `[env]` block points `DATA_FILE` and `UPLOAD_DIR`, sets
-`TRUST_PROXY_HOPS=1` and the restaurant's timezone, and health-checks `/api/health`. Its
-`internal_port` is 8080 because that is the port Fly's proxy forwards to and the value Fly
-injects into `PORT` — the image deliberately bakes no `PORT` in, so a plain `docker run` still uses
-the app's own 8787 default. Change `internal_port` only if you pin `PORT` yourself.
+Then check it from outside: `curl https://tandooriwala-bhadrak.fly.dev/api/health` must answer
+`"store":"ok"`, and §9 walks the rest.
+
+**Two things that will bite you, both verified the hard way:**
+
+- **Fly does not inject `PORT`.** It came back unset inside the running container, so the app sat on
+  its own 8787 default while the proxy health-checked 8080 — `2 critical`, and a site that looks dead
+  even though the log says it started. That is why `fly.toml` now states `PORT = "8080"` in `[env]`.
+  Keep it matching `internal_port`; if you change one, change the other.
+- **A trial organisation cannot allocate the public IPv4**, and without it the hostname does not
+  resolve for most visitors: `fly ips allocate-v4` answers *"This functionality is disabled for trial
+  organizations"* and points at the billing page. `fly ips list` on a working app shows both a `v6`
+  and a shared `v4`; `fly launch` normally adds them, and a trial account silently gets neither. Add a
+  card at `https://fly.io/dashboard/<org>/billing`, then `fly ips allocate-v4 -y && fly ips allocate-v6`.
+  Until then nothing on the app is wrong — it simply is not reachable over IPv4, so test §9 before you
+  send anyone the link.
+
+`sin` (Singapore) is the closest region Fly still sells for this account; Mumbai was closed to new
+deployments. The committed `fly.toml` mounts the volume at `/data`, which is exactly where its `[env]`
+block points `DATA_FILE` and `UPLOAD_DIR`, sets `TRUST_PROXY_HOPS=1` and the restaurant's timezone, and
+health-checks `/api/health`. The image deliberately bakes no `PORT` in, so a plain `docker run` still
+uses the app's own 8787 default — the Fly config is what pins 8080 for Fly.
 
 ### B. Render — Blueprint, mostly clicks
 
