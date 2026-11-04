@@ -1,4 +1,14 @@
 # Tandooriwala Bhadrak — website
+**At a glance**
+
+| | |
+| --- | --- |
+| **For** | Tandooriwala, a tandoor-led restaurant in Bhadrak, Odisha |
+| **Real, not simulated** | Table-map bookings, customer accounts and PDF tickets all write to SQLite through the Express API |
+| **Runs** | `npm ci`, then the install steps in *Process for Installation* below |
+| **Deploy** | `Dockerfile` + `fly.toml` + `render.yaml`; needs a persistent disk |
+
+<p><img src="https://img.shields.io/badge/React-Vite%20%2B%20TypeScript-2f81f7?style=flat-square&labelColor=1f2328&color=2f81f7" alt="React: Vite + TypeScript" height="20"> <img src="https://img.shields.io/badge/Express-node%3Asqlite-8d6746?style=flat-square&labelColor=1f2328&color=8d6746" alt="Express: node:sqlite" height="20"> <img src="https://img.shields.io/badge/Tailwind-CSS-38bdf8?style=flat-square&labelColor=1f2328&color=38bdf8" alt="Tailwind: CSS" height="20"> <img src="https://img.shields.io/badge/Docker-Fly%20/%20Render-2496ed?style=flat-square&labelColor=1f2328&color=2496ed" alt="Docker: Fly / Render" height="20"></p>
 
 A mobile-first site for a tandoor-led restaurant in Bhadrak, Odisha. North Indian,
 Mughlai, Punjabi and Indo-Chinese cooking; warm charcoal, cream and tandoor-inspired
