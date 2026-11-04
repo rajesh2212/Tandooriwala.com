@@ -10,6 +10,13 @@
 
 <p><img src="https://img.shields.io/badge/React-Vite%20%2B%20TypeScript-2f81f7?style=flat-square&labelColor=1f2328&color=2f81f7" alt="React: Vite + TypeScript" height="20"> <img src="https://img.shields.io/badge/Express-node%3Asqlite-8d6746?style=flat-square&labelColor=1f2328&color=8d6746" alt="Express: node:sqlite" height="20"> <img src="https://img.shields.io/badge/Tailwind-CSS-38bdf8?style=flat-square&labelColor=1f2328&color=38bdf8" alt="Tailwind: CSS" height="20"> <img src="https://img.shields.io/badge/Docker-Fly%20/%20Render-2496ed?style=flat-square&labelColor=1f2328&color=2496ed" alt="Docker: Fly / Render" height="20"></p>
 
+<p align="center">
+  <img src="docs/screenshots/home-desktop.png" alt="The storefront home page running locally: dark charcoal, oversized saffron display type, clay-oven photography" width="900">
+  <br>
+  <img src="docs/screenshots/home-mobile.png" alt="The same home page at a 390px phone viewport" width="280">
+</p>
+
+
 A mobile-first site for a tandoor-led restaurant in Bhadrak, Odisha. North Indian,
 Mughlai, Punjabi and Indo-Chinese cooking; warm charcoal, cream and tandoor-inspired
 saffron/burnt-orange palette; oversized condensed display type.
